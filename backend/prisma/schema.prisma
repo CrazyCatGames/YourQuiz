@@ -1,0 +1,257 @@
+// ============================================================
+//  Quiz App — Prisma Schema
+//  DB: PostgreSQL
+//  ORM: Prisma
+// ============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────
+//  ENUMS
+// ─────────────────────────────────────────
+
+enum Role {
+  PARTICIPANT
+  ORGANIZER
+  @@map("role")
+}
+
+enum QuestionType {
+  TEXT           // вопрос текстом
+  IMAGE          // вопрос картинкой
+  @@map("question_type")
+}
+
+enum AnswerMode {
+  SINGLE         // одиночный выбор
+  MULTIPLE       // множественный выбор
+  @@map("answer_mode")
+}
+
+enum SessionStatus {
+  WAITING        // лобби, ждём участников
+  IN_PROGRESS    // квиз идёт
+  FINISHED       // завершён
+  CANCELLED      // отменён организатором
+  @@map("session_status")
+}
+
+// ─────────────────────────────────────────
+//  USERS
+// ─────────────────────────────────────────
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  passwordHash  String    @map("password_hash")
+  displayName   String    @map("display_name")
+  avatarUrl     String?   @map("avatar_url")
+  role          Role      @default(PARTICIPANT)
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  quizzes              Quiz[]                // квизы, созданные этим организатором
+  hostedSessions       QuizSession[]         // сессии, которые он ведёт
+  sessionParticipants  SessionParticipant[]  // участие в сессиях
+  participantAnswers   ParticipantAnswer[]   // ответы пользователя
+
+  @@map("users")
+}
+
+// ─────────────────────────────────────────
+//  CATEGORIES  (справочник)
+// ─────────────────────────────────────────
+
+model Category {
+  id      String  @id @default(uuid())
+  name    String  @unique           // "История", "Наука", "Спорт" …
+  icon    String?                   // emoji или имя иконки
+  color   String?                   // hex-цвет для UI
+
+  quizzes Quiz[]
+
+  @@map("categories")
+}
+
+// ─────────────────────────────────────────
+//  QUIZZES
+// ─────────────────────────────────────────
+
+model Quiz {
+  id                  String    @id @default(uuid())
+  title               String
+  description         String?
+  coverImageUrl       String?   @map("cover_image_url")
+
+  categoryId          String?   @map("category_id")
+  category            Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  createdById         String    @map("created_by_id")
+  createdBy           User      @relation(fields: [createdById], references: [id], onDelete: Cascade)
+
+  // Настройки проведения
+  defaultTimePerQuestion Int     @default(30)  @map("default_time_per_question")  // секунды
+  maxParticipants        Int?    @map("max_participants")
+  isPublic               Boolean @default(false) @map("is_public")
+  shuffleQuestions       Boolean @default(false) @map("shuffle_questions")
+  showCorrectAnswers     Boolean @default(true)  @map("show_correct_answers")
+
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt      @map("updated_at")
+
+  // Relations
+  questions Quiz_Question[]
+  sessions  QuizSession[]
+
+  @@map("quizzes")
+}
+
+// ─────────────────────────────────────────
+//  QUESTIONS
+// ─────────────────────────────────────────
+
+model Quiz_Question {
+  id            String       @id @default(uuid())
+  quizId        String       @map("quiz_id")
+  quiz          Quiz         @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+  orderIndex    Int          @map("order_index")   // позиция в квизе
+  type          QuestionType @default(TEXT)
+  answerMode    AnswerMode   @default(SINGLE)       @map("answer_mode")
+
+  questionText  String?      @map("question_text")  // текст вопроса
+  imageUrl      String?      @map("image_url")       // если type = IMAGE
+
+  timeLimit     Int          @default(30) @map("time_limit")  // секунды (переопределяет квиз)
+  points        Int          @default(100)                    // макс. баллов за вопрос
+
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt      @map("updated_at")
+
+  // Relations
+  answerOptions     AnswerOption[]
+  participantAnswers ParticipantAnswer[]
+
+  @@unique([quizId, orderIndex])
+  @@map("quiz_questions")
+}
+
+// ─────────────────────────────────────────
+//  ANSWER OPTIONS
+// ─────────────────────────────────────────
+
+model AnswerOption {
+  id          String        @id @default(uuid())
+  questionId  String        @map("question_id")
+  question    Quiz_Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  orderIndex  Int           @map("order_index")
+  text        String?                            // текст варианта
+  imageUrl    String?       @map("image_url")   // если вариант — картинка
+  isCorrect   Boolean       @map("is_correct")
+
+  // Relations
+  selectedIn  SelectedOption[]
+
+  @@map("answer_options")
+}
+
+// ─────────────────────────────────────────
+//  QUIZ SESSIONS  (одно проведение квиза)
+// ─────────────────────────────────────────
+
+model QuizSession {
+  id                    String        @id @default(uuid())
+  quizId                String        @map("quiz_id")
+  quiz                  Quiz          @relation(fields: [quizId], references: [id], onDelete: Restrict)
+
+  hostId                String        @map("host_id")
+  host                  User          @relation(fields: [hostId], references: [id], onDelete: Restrict)
+
+  roomCode              String        @unique @map("room_code")  // 6-символьный код для входа
+  status                SessionStatus @default(WAITING)
+
+  currentQuestionIndex  Int           @default(0) @map("current_question_index")
+  questionStartedAt     DateTime?     @map("question_started_at")  // момент показа текущего вопроса
+
+  startedAt             DateTime?     @map("started_at")
+  endedAt               DateTime?     @map("ended_at")
+  createdAt             DateTime      @default(now()) @map("created_at")
+
+  // Relations
+  participants   SessionParticipant[]
+  answers        ParticipantAnswer[]
+
+  @@map("quiz_sessions")
+}
+
+// ─────────────────────────────────────────
+//  SESSION PARTICIPANTS  (кто подключился)
+// ─────────────────────────────────────────
+
+model SessionParticipant {
+  id         String      @id @default(uuid())
+  sessionId  String      @map("session_id")
+  session    QuizSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  userId     String      @map("user_id")
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  totalScore Int         @default(0) @map("total_score")
+  rank       Int?                                         // итоговое место (заполняется по окончании)
+  joinedAt   DateTime    @default(now()) @map("joined_at")
+
+  @@unique([sessionId, userId])
+  @@map("session_participants")
+}
+
+// ─────────────────────────────────────────
+//  PARTICIPANT ANSWERS  (ответы на вопросы)
+// ─────────────────────────────────────────
+
+model ParticipantAnswer {
+  id          String        @id @default(uuid())
+  sessionId   String        @map("session_id")
+  session     QuizSession   @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  questionId  String        @map("question_id")
+  question    Quiz_Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  userId      String        @map("user_id")
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  isCorrect   Boolean       @map("is_correct")
+  scoreEarned Int           @map("score_earned")           // фактические баллы (учитывает скорость)
+  timeTakenMs Int           @map("time_taken_ms")          // мс от показа вопроса до ответа
+  answeredAt  DateTime      @default(now()) @map("answered_at")
+
+  // Выбранные варианты (many-to-many через промежуточную)
+  selectedOptions SelectedOption[]
+
+  @@unique([sessionId, questionId, userId])
+  @@map("participant_answers")
+}
+
+// ─────────────────────────────────────────
+//  SELECTED OPTIONS  (какие варианты выбраны)
+// ─────────────────────────────────────────
+
+model SelectedOption {
+  id                  String            @id @default(uuid())
+  participantAnswerId String            @map("participant_answer_id")
+  participantAnswer   ParticipantAnswer @relation(fields: [participantAnswerId], references: [id], onDelete: Cascade)
+
+  answerOptionId      String            @map("answer_option_id")
+  answerOption        AnswerOption      @relation(fields: [answerOptionId], references: [id], onDelete: Cascade)
+
+  @@unique([participantAnswerId, answerOptionId])
+  @@map("selected_options")
+}
