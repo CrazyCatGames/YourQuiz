@@ -1,0 +1,85 @@
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── Base ─────────────────────────────────────────────────── */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { font-family: 'DM Sans', sans-serif; }
+
+body {
+  background-color: #080b14;
+  color: #e8edf8;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ─── Grid overlay (декоративная сетка на фоне) ────────────── */
+.bg-grid {
+  background-image:
+    linear-gradient(rgba(0,229,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,229,255,0.03) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+/* ─── Noise texture ─────────────────────────────────────────── */
+.noise::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.04;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  background-size: 128px;
+}
+
+/* ─── Glass card ────────────────────────────────────────────── */
+.glass {
+  background: rgba(26, 33, 56, 0.7);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(35, 45, 71, 0.8);
+}
+
+/* ─── Glow border on hover ──────────────────────────────────── */
+.glow-border {
+  border: 1px solid transparent;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.glow-border:hover {
+  border-color: rgba(0,229,255,0.4);
+  box-shadow: 0 0 20px rgba(0,229,255,0.1);
+}
+
+/* ─── Timer pulse ───────────────────────────────────────────── */
+.timer-critical { animation: pulse-glow 0.6s ease-in-out infinite; }
+
+/* ─── Scrollbar ─────────────────────────────────────────────── */
+::-webkit-scrollbar        { width: 6px; }
+::-webkit-scrollbar-track  { background: #0e1220; }
+::-webkit-scrollbar-thumb  { background: #232d47; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #3d4f73; }
+
+/* ─── Selection ─────────────────────────────────────────────── */
+::selection { background: rgba(0,229,255,0.2); color: #00e5ff; }
+
+/* ─── Answer option colors ──────────────────────────────────── */
+.opt-A { --opt-color: #00e5ff; --opt-bg: rgba(0,229,255,0.08); }
+.opt-B { --opt-color: #a855f7; --opt-bg: rgba(168,85,247,0.08); }
+.opt-C { --opt-color: #10d48a; --opt-bg: rgba(16,212,138,0.08); }
+.opt-D { --opt-color: #ffb347; --opt-bg: rgba(255,179,71,0.08); }
+
+.opt-selected {
+  background: var(--opt-bg) !important;
+  border-color: var(--opt-color) !important;
+  box-shadow: 0 0 16px color-mix(in srgb, var(--opt-color) 20%, transparent) !important;
+}
+
+.opt-correct  { background: rgba(16,212,138,0.12) !important; border-color: #10d48a !important; }
+.opt-wrong    { background: rgba(255,77,109,0.12) !important; border-color: #ff4d6d !important; }
+
+@keyframes pulse-glow {
+  0%,100% { opacity: 1; }
+  50% { opacity: 0.45; }
+}

@@ -1,0 +1,62 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: quiz_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER:     quiz_user
+      POSTGRES_PASSWORD: quiz_pass
+      POSTGRES_DB:       quiz_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/prisma/migrations/001_init.sql:/docker-entrypoint-initdb.d/01_init.sql
+      - ./backend/prisma/migrations/002_score.sql:/docker-entrypoint-initdb.d/02_score.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U quiz_user -d quiz_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: quiz_backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL:            postgresql://quiz_user:quiz_pass@postgres:5432/quiz_db
+      JWT_SECRET:              super-secret-change-me
+      JWT_REFRESH_SECRET:      refresh-secret-change-me
+      JWT_EXPIRES_IN:          15m
+      JWT_REFRESH_EXPIRES_IN:  7d
+      PORT:                    4000
+      CLIENT_URL:              http://localhost:3000
+      NODE_ENV:                development
+      UPLOAD_DIR:              uploads
+      MAX_FILE_SIZE_MB:        5
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./backend/uploads:/app/uploads
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: quiz_frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      NEXT_PUBLIC_API_URL:    http://localhost:4000
+      NEXT_PUBLIC_SOCKET_URL: http://localhost:4000
+    ports:
+      - "3000:3000"
+
+volumes:
+  postgres_data:
