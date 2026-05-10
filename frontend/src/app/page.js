@@ -120,7 +120,7 @@ export default function HomePage() {
 
             {/* ── Footer ── */}
             <footer className="py-6 border-t border-border/50 text-center text-dim text-sm mt-auto relative z-10">
-                <Logo size="sm" className="justify-center mb-2" /> Домашние квизы © 2024
+                <Logo size="sm" className="justify-center mb-2" /> home quiz © 2026
             </footer>
         </div>
     )
