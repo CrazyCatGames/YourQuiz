@@ -407,6 +407,7 @@ function sanitizeQuestion(q) {
     questionText: q.questionText,
     imageUrl:    q.imageUrl,
     points:      q.points,
+    timeLimit:   q.timeLimit,
     options:     q.answerOptions.map(({ isCorrect: _, ...o }) => o),
   }
 }

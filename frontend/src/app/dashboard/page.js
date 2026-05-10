@@ -52,7 +52,7 @@ export default function DashboardPage() {
       <div className="border-b border-border bg-ink/80 backdrop-blur sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-6">
-            <Logo size="sm" />
+            <Logo size="md" />
             <nav className="flex gap-1">
               {['quizzes', 'history'].map((t) => (
                 <button

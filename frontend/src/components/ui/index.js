@@ -94,8 +94,8 @@ export function Logo({ size = 'md' }) {
   const sz = { sm: 'text-lg', md: 'text-2xl', lg: 'text-4xl' }[size]
   return (
     <span className={clsx('font-display font-extrabold tracking-tight', sz)}>
-      <span className="text-snow">Quiz</span>
-      <span className="text-cyan">Flow</span>
+      <span className="text-snow">Your</span>
+      <span className="text-cyan">Quiz</span>
     </span>
   )
 }

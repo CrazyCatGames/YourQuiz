@@ -18,7 +18,7 @@ export default function LoginPage() {
     setLoading(true)
     try {
       const user = await login(form.email, form.password)
-      router.push(user.role === 'ORGANIZER' ? '/dashboard' : '/join')
+      router.push(user.role === 'ORGANIZER' ? '/dashboard' : '/profile')
     } catch (e) {
       setError(e.message)
     } finally {

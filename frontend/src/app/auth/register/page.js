@@ -18,7 +18,7 @@ export default function RegisterPage() {
     setLoading(true)
     try {
       const user = await register(form)
-      router.push(user.role === 'ORGANIZER' ? '/dashboard' : '/join')
+      router.push(user.role === 'ORGANIZER' ? '/dashboard' : '/profile')
     } catch (e) {
       setError(e.message)
     } finally {

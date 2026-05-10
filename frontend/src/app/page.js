@@ -1,13 +1,23 @@
 'use client'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { Logo, Button } from '@/components/ui'
-
-// ЗДЕСЬ ИСПРАВЛЕНИЕ: Мы добавляем обратно Zap, Users, BarChart3, ArrowRight
 import { LogOut, Zap, Users, BarChart3, ArrowRight } from 'lucide-react'
 
 export default function HomePage() {
     const { user, logout } = useAuth()
+    const router = useRouter()
+
+    const handleMainAction = () => {
+        if (!user) {
+            router.push('/auth/login')
+        } else if (user.role === 'ORGANIZER') {
+            router.push('/dashboard')
+        } else {
+            router.push('/profile')
+        }
+    }
 
     return (
         <div className="min-h-screen bg-void bg-grid flex flex-col">
@@ -17,33 +27,28 @@ export default function HomePage() {
                 <Logo size="md" />
                 <div className="flex items-center gap-4">
                     {user ? (
-                        <>
-                            {user.role === 'ORGANIZER' && (
-                                <Link href="/dashboard">
-                                    <Button size="sm">Мои квизы</Button>
-                                </Link>
-                            )}
-
-                            <div className="flex items-center gap-3">
-                                <span className="text-dim text-sm hidden sm:block">
-                                    {user.displayName || user.email}
-                                </span>
-                                <button 
-                                    onClick={logout} 
-                                    className="text-dim hover:text-rose transition-colors"
-                                    title="Выйти"
-                                >
-                                    <LogOut size={18} />
-                                </button>
-                            </div>
-                        </>
+                        <div className="flex items-center gap-4">
+                             <div className="text-right hidden sm:block">
+                               <p className="text-sm font-display font-medium text-snow">{user.displayName || user.email}</p>
+                               <p className="text-xs text-dim">
+                                 {user.role === 'ORGANIZER' ? 'Организатор' : 'Участник'}
+                               </p>
+                             </div>
+                            <button 
+                                onClick={logout} 
+                                className="text-dim hover:text-rose transition-colors"
+                                title="Выйти"
+                            >
+                                <LogOut size={18} />
+                            </button>
+                        </div>
                     ) : (
                         <>
                             <Link href="/auth/login">
                                 <Button variant="ghost" size="sm">Войти</Button>
                             </Link>
                             <Link href="/auth/register">
-                                <Button size="sm">Начать бесплатно</Button>
+                                <Button size="sm">Регистрация</Button>
                             </Link>
                         </>
                     )}
@@ -56,7 +61,7 @@ export default function HomePage() {
                 <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-cyan/5 blur-[120px] pointer-events-none" />
                 <div className="absolute top-1/2 left-1/3 w-[400px] h-[400px] rounded-full bg-violet/5 blur-[100px] pointer-events-none" />
 
-                <div className="relative max-w-4xl">
+                <div className="relative max-w-4xl flex flex-col items-center">
                     <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-cyan/30 bg-cyan-glow text-cyan text-sm font-display font-semibold mb-8 animate-fade-in">
                         <Zap size={14} /> Квизы в реальном времени
                     </div>
@@ -73,16 +78,11 @@ export default function HomePage() {
                         живым лидербордом и моментальными результатами.
                     </p>
 
-                    <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-up" style={{ animationDelay: '0.2s', opacity: 0 }}>
-                        <Link href={user ? '/dashboard' : '/auth/register'}>
-                            <Button size="xl" className="gap-3">
-                                {user ? 'Открыть дашборд' : 'Создать квиз бесплатно'}
-                                <ArrowRight size={20} />
-                            </Button>
-                        </Link>
-                        <Link href="/join">
-                            <Button variant="ghost" size="xl">Войти по коду</Button>
-                        </Link>
+                    <div className="animate-fade-up" style={{ animationDelay: '0.2s', opacity: 0 }}>
+                        <Button size="xl" className="gap-3 group" onClick={handleMainAction}>
+                            Вперёд к квизам
+                            <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+                        </Button>
                     </div>
                 </div>
 
@@ -119,8 +119,8 @@ export default function HomePage() {
             </main>
 
             {/* ── Footer ── */}
-            <footer className="py-6 border-t border-border/50 text-center text-dim text-sm">
-                <Logo size="sm" /> <span className="ml-2">© 2024</span>
+            <footer className="py-6 border-t border-border/50 text-center text-dim text-sm mt-auto relative z-10">
+                <Logo size="sm" className="justify-center mb-2" /> Домашние квизы © 2024
             </footer>
         </div>
     )

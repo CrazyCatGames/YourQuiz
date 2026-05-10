@@ -15,7 +15,7 @@ RUN npx prisma generate
 
 
 COPY src ./src
-COPY .env.example .env.example
+COPY .env .env
 
 
 RUN mkdir -p uploads
