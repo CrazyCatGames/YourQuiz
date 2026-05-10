@@ -25,7 +25,6 @@ async function request(path, options = {}) {
 
   const res = await fetch(`${BASE}/api${path}`, { ...options, headers })
 
-  // Авто-refresh при 401
   if (res.status === 401 && typeof window !== 'undefined') {
     const refreshed = await tryRefresh()
     if (refreshed) {
@@ -39,8 +38,6 @@ async function request(path, options = {}) {
     }
     clearTokens()
     
-    // Проверяем, что запрос не был фоновой проверкой сессии, 
-    // и мы не находимся на странице авторизации, чтобы избежать зацикливания
     if (path !== '/auth/me' && !window.location.pathname.startsWith('/auth/')) {
         window.location.href = '/auth/login'
     }

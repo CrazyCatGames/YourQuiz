@@ -19,7 +19,7 @@ export default function HostPage() {
   const [qIndex,       setQIndex]       = useState(0)
   const [totalQ,       setTotalQ]       = useState(0)
   const [timeLeft,     setTimeLeft]     = useState(0)
-  const [phase,        setPhase]        = useState('lobby')  // lobby | question | reveal | finished
+  const [phase,        setPhase]        = useState('lobby') 
   const [correctIds,   setCorrectIds]   = useState([])
 
   useEffect(() => {
@@ -32,7 +32,6 @@ export default function HostPage() {
     })
   }, [])
 
-  // ── Socket events ──────────────────────────────────────────
   useEffect(() => {
     const handlers = {
       'room:participants_updated': ({ participants }) => setParticipants(participants),
@@ -58,7 +57,6 @@ export default function HostPage() {
     return () => cleanups.forEach((off) => off())
   }, [on])
 
-  // ── Таймер на стороне ведущего ─────────────────────────────
   useEffect(() => {
     if (phase !== 'question') return
     if (timeLeft <= 0) return
@@ -76,7 +74,6 @@ export default function HostPage() {
 
   const OPT = ['A', 'B', 'C', 'D']
 
-  // ── FINISHED ───────────────────────────────────────────────
   if (phase === 'finished') return (
     <div className="min-h-screen bg-void flex flex-col items-center justify-center px-6">
       <div className="absolute inset-0 bg-gradient-to-b from-cyan/5 to-violet/5 pointer-events-none" />

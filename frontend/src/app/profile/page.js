@@ -8,23 +8,25 @@ import { Card, Badge, Spinner, EmptyState, Logo, Button } from '@/components/ui'
 import { Clock, Users, Trophy, Star, LogOut, ArrowLeft, Hash } from 'lucide-react'
 
 export default function ProfilePage() {
-  const { user, logout } = useAuth()
+  const { user, loading: authLoading, logout } = useAuth()
   const router = useRouter()
   const [sessions, setSessions] = useState([])
   const [loading, setLoading] = useState(true)
   
-  // Для входа по коду прямо из профиля
   const [code, setCode] = useState('')
   const [joinError, setJoinError] = useState('')
   const [joining, setJoining] = useState(false)
 
   useEffect(() => {
+    if (authLoading) return
+
     if (!user) {
       router.push('/auth/login')
       return
     }
+    
     loadHistory()
-  }, [user, router])
+  }, [user, authLoading, router])
 
   const loadHistory = async () => {
     try {
@@ -58,13 +60,11 @@ export default function ProfilePage() {
     router.push('/')
   }
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-void bg-grid">
-        <Spinner size="lg" />
-      </div>
-    )
-  }
+  if (authLoading || loading) return (
+    <div className="min-h-screen flex items-center justify-center">
+      <Spinner size="lg" />
+    </div>
+  )
 
   const isOrganizer = user?.role === 'ORGANIZER'
 
@@ -91,8 +91,6 @@ export default function ProfilePage() {
       </div>
 
       <main className="max-w-6xl mx-auto px-6 py-10">
-        
-        {/* Блок: Войти в игру (Только для участников) */}
         {!isOrganizer && (
           <div className="mb-12 bg-panel/50 border border-border rounded-3xl p-8 relative overflow-hidden">
             <div className="relative z-10 flex flex-col md:flex-row items-center gap-8 justify-between">

@@ -345,7 +345,6 @@ async function finishQuiz(io, sessionId) {
   clearTimer(sessionId)
   clearState(sessionId)
 
-  // Проставить итоговые ранги
   const participants = await prisma.sessionParticipant.findMany({
     where:   { sessionId },
     orderBy: { totalScore: 'desc' },

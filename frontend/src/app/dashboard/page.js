@@ -8,7 +8,7 @@ import { Button, Card, Badge, Spinner, EmptyState, Logo } from '@/components/ui'
 import { Plus, Play, Edit3, Trash2, Clock, Users, LogOut, LayoutGrid } from 'lucide-react'
 
 export default function DashboardPage() {
-  const { user, logout } = useAuth()
+  const { user, loading: authLoading, logout } = useAuth()
   const router = useRouter()
   const [quizzes,  setQuizzes]  = useState([])
   const [sessions, setSessions] = useState([])
@@ -16,10 +16,13 @@ export default function DashboardPage() {
   const [tab,      setTab]      = useState('quizzes')
 
   useEffect(() => {
+    if (authLoading) return 
+    
     if (!user) { router.push('/auth/login'); return }
     if (user.role !== 'ORGANIZER') { router.push('/join'); return }
+    
     loadData()
-  }, [user])
+  }, [user, authLoading])
 
   const loadData = async () => {
     setLoading(true)
@@ -40,7 +43,7 @@ export default function DashboardPage() {
     router.push(`/host/${session.id}`)
   }
 
-  if (loading) return (
+  if (authLoading || loading) return (
     <div className="min-h-screen flex items-center justify-center">
       <Spinner size="lg" />
     </div>
@@ -48,7 +51,6 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-void bg-grid">
-      {/* ── Sidebar-style header ── */}
       <div className="border-b border-border bg-ink/80 backdrop-blur sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-6">
@@ -70,7 +72,12 @@ export default function DashboardPage() {
             </nav>
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-dim text-sm hidden sm:block">{user?.displayName}</span>
+             <div className="text-right hidden sm:block">
+               <p className="text-sm font-display font-medium text-snow">{user?.displayName}</p>
+               <p className="text-xs text-dim text-right">
+                 {user?.role === 'ORGANIZER' ? 'Организатор' : 'Участник'}
+               </p>
+             </div>
             <button onClick={() => { logout(); router.push('/') }} className="text-dim hover:text-rose transition-colors">
               <LogOut size={18} />
             </button>
@@ -107,16 +114,13 @@ export default function DashboardPage() {
                   <Card key={q.id} className="p-6 flex flex-col gap-4 glow-border group">
                     <div className="flex items-start justify-between gap-2">
                       <div>
-                        <h3 className="font-display font-bold text-snow text-lg leading-snug">{q.title}</h3>
+                        <h3 className="font-display font-bold text-snow text-lg leading-snug truncate">{q.title}</h3>
                         {q.category && (
                           <Badge color="violet" className="mt-1.5">
                             {q.category.icon} {q.category.name}
                           </Badge>
                         )}
                       </div>
-                      <Badge color={q.isPublic ? 'emerald' : 'muted'}>
-                        {q.isPublic ? 'Публичный' : 'Приватный'}
-                      </Badge>
                     </div>
 
                     <div className="flex items-center gap-4 text-dim text-sm">

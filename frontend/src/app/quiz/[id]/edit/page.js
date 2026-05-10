@@ -31,7 +31,7 @@ export default function QuizEditPage() {
   const [quiz,    setQuiz]    = useState({ title: '', description: '', isPublic: false, defaultTimePerQuestion: 30, categoryId: '' })
   const [questions, setQ]     = useState([emptyQuestion()])
   const [cats,    setCats]    = useState([])
-  const [active,  setActive]  = useState(0)        // активный вопрос в редакторе
+  const [active,  setActive]  = useState(0)
   const [loading, setLoading] = useState(!isNew)
   const [saving,  setSaving]  = useState(false)
   const [saved,   setSaved]   = useState(false)
@@ -59,6 +59,41 @@ export default function QuizEditPage() {
   }, [])
 
   const save = async () => {
+    if (!quiz.title?.trim()) {
+      alert('Пожалуйста, укажите название квиза.')
+      return
+    }
+
+    for (let i = 0; i < questions.length; i++) {
+      const q = questions[i]
+      
+      if (q.type === 'TEXT' && !q.questionText?.trim()) {
+        alert(`Пожалуйста, введите текст для вопроса №${i + 1}`)
+        setActive(i)
+        return
+      }
+
+      if (q.type === 'IMAGE' && !q.imageUrl) {
+        alert(`Пожалуйста, загрузите картинку для вопроса №${i + 1}`)
+        setActive(i)
+        return
+      }
+
+      const hasEmptyOptions = q.options.some((opt) => !opt.text?.trim())
+      if (hasEmptyOptions) {
+        alert(`Пожалуйста, заполните текст всех вариантов ответов в вопросе №${i + 1}`)
+        setActive(i)
+        return
+      }
+
+      const hasCorrect = q.options.some((opt) => opt.isCorrect)
+      if (!hasCorrect) {
+        alert(`Пожалуйста, отметьте правильный ответ в вопросе №${i + 1}`)
+        setActive(i)
+        return
+      }
+    }
+
     setSaving(true)
     try {
       let quizId = params.id
@@ -69,13 +104,22 @@ export default function QuizEditPage() {
         await api.quizzes.update(quizId, quiz)
       }
 
-      for (const q of questions) {
+      for (let i = 0; i < questions.length; i++) {
+        const q = questions[i]
         const body = { ...q, options: q.options }
+        
         if (q.id) {
           await api.questions.update(quizId, q.id, body)
         } else {
           const created = await api.questions.add(quizId, body)
-          q.id = created.id
+
+          setQ((prev) => {
+            const next = [...prev]
+            if (next[i]) {
+              next[i] = { ...next[i], id: created.id }
+            }
+            return next
+          })
         }
       }
 
@@ -138,6 +182,7 @@ export default function QuizEditPage() {
             className="bg-transparent font-display font-bold text-snow text-xl outline-none flex-1 min-w-0 placeholder-muted"
             placeholder="Название квиза..."
             value={quiz.title}
+            maxLength={28}
             onChange={(e) => setQuiz({ ...quiz, title: e.target.value })}
           />
           <div className="flex items-center gap-2 ml-auto">
@@ -301,15 +346,6 @@ export default function QuizEditPage() {
                 <option value="">— Без категории</option>
                 {cats.map((c) => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
               </select>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-ghost font-display font-semibold">Публичный</span>
-              <button
-                onClick={() => setQuiz({ ...quiz, isPublic: !quiz.isPublic })}
-                className={`w-11 h-6 rounded-full transition-all relative ${quiz.isPublic ? 'bg-cyan' : 'bg-muted'}`}
-              >
-                <span className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${quiz.isPublic ? 'left-6' : 'left-1'}`} />
-              </button>
             </div>
           </Card>
         </div>
