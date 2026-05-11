@@ -76,7 +76,7 @@ export default function PlayPage() {
         if (me) setMyScore(me.totalScore)
       },
       'quiz:finished': ({ leaderboard }) => { setLeaderboard(leaderboard); setPhase('finished') },
-      'quiz:cancelled': () => { alert('Квиз отменён организатором'); router.push('/join') },
+      'quiz:cancelled': () => { alert('Квиз отменён организатором'); router.push('/profile') },
     }
 
     const cleanups = Object.entries(handlers).map(([ev, fn]) => on(ev, fn))
@@ -170,7 +170,7 @@ export default function PlayPage() {
             </div>
           ))}
         </div>
-        <Button onClick={() => router.push('/join')}>Ещё квиз</Button>
+        <Button onClick={() => router.push('/profile')}>Вернуться в профиль</Button>
       </div>
     )
   }
